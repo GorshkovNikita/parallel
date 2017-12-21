@@ -313,38 +313,12 @@ int main(int argc, char** argv) {
 	Point *points = new Point[n2];
 	generatePoints(points, n2, rank, n);
     
-    vector<int> sortingNet = createSortingNet(0, numprocs);
+    	vector<int> sortingNet = createSortingNet(0, numprocs);
 	MPI_Barrier(MPI_COMM_WORLD);
 	t1 = MPI_Wtime();
 
 	distributedSort(&points, n2, rank, sortingNet);
 	//sort(points, points + n2);
-	/*
-	parallelSort(points, n2);
-
-	for (int i = 0; i < sortingNet.size(); i += 2) {
-    	if (rank == sortingNet[i]) {
-        	Point *newPoints = new Point[n2], *finalPoints = new Point[n2];
-        	MPI_Send(points, n2, pointType, sortingNet[i+1], 1, MPI_COMM_WORLD);
-        	MPI_Recv(newPoints, n2, pointType, sortingNet[i+1], 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        	for(int i = 0, j = 0, k = 0; k < n2;) {
-       		 if (points[i] < newPoints[j]) finalPoints[k++] = points[i++];
-       		 else finalPoints[k++] = newPoints[j++];
-        	}
-        	points = finalPoints;
-    	}
-    	else if (rank == sortingNet[i + 1]) {
-        	Point *newPoints = new Point[n2], *finalPoints = new Point[n2];
-        	MPI_Recv(newPoints, n2, pointType, sortingNet[i], 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        	MPI_Send(points, n2, pointType, sortingNet[i], 1, MPI_COMM_WORLD);
-        	for (int i = n2-1, j = n2-1, k = n2-1; k >= 0;) {
-   			 if (newPoints[j] < points[i]) finalPoints[k--] = points[i--];
-   			 else finalPoints[k--] = newPoints[j--];
-        	}
-        	points = finalPoints;
-    	}
-	}
-	*/
     
 	MPI_Barrier(MPI_COMM_WORLD);
 	t2 = MPI_Wtime();
