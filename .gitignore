@@ -1,1 +1,3 @@
 *.o
+stdafx.h
+stdafx.cpp

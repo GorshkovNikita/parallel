@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include <float.h>
 #include <iostream>
 #include <vector>
@@ -11,6 +12,7 @@
 #include <cstdlib>
 #include <pthread.h>
 #include <iomanip>
+#include <stdio.h>
 
 using namespace std;
 
@@ -56,7 +58,7 @@ void generatePoints(Point *points, int n, int i, int elementsNumber) {
 void printPoints(Point *points, int n, int rank) {
 	for(int i = 0; i < n; i++) {
     //if (points[i].index != -1) {
-   	 cout << "x[" << rank <<  "][" << points[i].index << "] = " << fixed << setprecision(4) << points[i].coord[0] << endl;
+		cout << "x[" << rank <<  "][" << points[i].index << "] = " << fixed << setprecision(4) << points[i].coord[0] << endl;
     //}
 	}
 }
@@ -66,6 +68,30 @@ bool checkSorted(Point *points, int n) {
     	if (points[i+1] < points[i])
         	return false;
 	return true;
+}
+
+bool checkDistributedSorted(Point *points, int elementsPerProc, int rank, int numprocs) {
+	bool localSorted = checkSorted(points, elementsPerProc);
+	bool bordersSorted = true;
+
+	int rightRank = (rank + 1) % numprocs;
+    int leftRank = (rank - 1) % numprocs;
+
+	Point *leftMax = new Point();
+	MPI_Sendrecv(
+		points + elementsPerProc - 1, 1, pointType, rightRank, 1, 
+		leftMax, 1, pointType, leftRank, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE
+	);
+
+	if (points[elementsPerProc - 1] < *leftMax) {
+		bordersSorted = false;
+	}
+
+	int localWithBordersSoted = localSorted && bordersSorted;
+	int globalSorted;
+	MPI_Allreduce(&localWithBordersSoted, &globalSorted, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+	return globalSorted == numprocs;
 }
 
 void merge(const vector<int> &arr1, const vector<int> &arr2, vector<int> &result) {
@@ -296,33 +322,47 @@ int main(int argc, char** argv) {
     	cout << "n1 and n2 are needed" << endl;
     	return 0;
 	}
-	int n = stoi(argv[1]);
+	int n1 = stoi(argv[1]);
+	int n2 = stoi(argv[2]);
 	int numprocs, rank;
 	MPI_Init(&argc, &argv);
 	MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	double t1, t2;
-	int n1 = numprocs;
-	int n2 = ceil(n / (float)n1);
-	MPI_Barrier(MPI_COMM_WORLD);
+	int elementsPerProc = ceil(n1 * n2 / (float)numprocs);
 
 	srand(time(NULL) + rank);
-
 	createPointDatatype();
-
-	Point *points = new Point[n2];
-	generatePoints(points, n2, rank, n);
-    
-	vector<int> sortingNet = createSortingNet(0, numprocs);
+	Point *points = new Point[elementsPerProc];
+	generatePoints(points, elementsPerProc, rank, n1 * n2);
+    vector<int> sortingNet = createSortingNet(0, numprocs);
+	
 	MPI_Barrier(MPI_COMM_WORLD);
 	t1 = MPI_Wtime();
-
-	distributedSort(&points, n2, rank, sortingNet);
-	//sort(points, points + n2);
+	if (numprocs != 1)
+		distributedSort(&points, elementsPerProc, rank, sortingNet);
+	else {
+		//sort(points, points + n1 * n2);
+		//heapSort(points, n1 * n2);
+		parallelSort(points, n1 * n2);
+	}
     
 	MPI_Barrier(MPI_COMM_WORLD);
 	t2 = MPI_Wtime();
-	cout << "rank = " << rank << " sort time " << t2 - t1 << endl;
+	double sortTime = t2 - t1;
+	cout << "rank = " << rank << " sort time " << sortTime << endl;
+
+	bool sorted = checkDistributedSorted(points, elementsPerProc, rank, numprocs);
+	
+	MPI_File fh;
+	char buffer[35];
+	sprintf(buffer, "sorted in %11.5f s, sorted = %d", sortTime, sorted);
+	char filename[30];
+	sprintf(filename, "%dx%d_%d.out", n1, n2, numprocs);
+	MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
+	if (rank == 0) MPI_File_write(fh, &buffer, 35, MPI_CHAR, MPI_STATUS_IGNORE);
+	MPI_File_close(&fh);
+	 
  
 	MPI_Finalize();
 
