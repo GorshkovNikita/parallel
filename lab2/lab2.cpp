@@ -306,15 +306,7 @@ int main(int argc, char** argv) {
 	double t1, t2;
 	int n1 = numprocs;
 	int n2 = ceil(n / (float)n1);
-	if (rank == 0) {
-   	 vector<int> processorRanks;
-   	 for (int i = 0; i < n1; i++)
-   	 	processorRanks.push_back(i);
-   	 outputFile.open(to_string(n1) + ".out");
-   	 batcherSort(processorRanks);
-	}
 	MPI_Barrier(MPI_COMM_WORLD);
-	vector<int> sortingNet = getSortingNetwork(n1);
 
 	srand(time(NULL) + rank);
 
