@@ -1,3 +1,4 @@
+#include <float.h>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -176,9 +177,6 @@ void createPointDatatype() {
 	MPI_Type_commit(&pointType);
 }
 
-// сортировка отсортированных частей массива
-// arr - массив, l - индекс начала левой части, индекс r не нужен, тк части всегда идут подряд
-// n1 - количество элементов в левой части, n2 - количество элементов в правой
 void mergeSortedParts(Point *points, int l, int n1, int n2) {
 	Point *left = new Point[n1], *right = new Point[n2];
 	for (int i = l, j = 0; i < l + n1; i++, j++)
@@ -319,7 +317,7 @@ int main(int argc, char** argv) {
 	MPI_Barrier(MPI_COMM_WORLD);
 	t1 = MPI_Wtime();
 
-	distributedSort(&points, n, rank, sortingNet);
+	distributedSort(&points, n2, rank, sortingNet);
 	//sort(points, points + n2);
 	/*
 	parallelSort(points, n2);
