@@ -47,8 +47,8 @@ void generatePoints(Point *points, int n, int i, int elementsNumber) {
 		}
 		else {
 			points[j].coord[0] = getNextFloat();
-    		points[j].coord[1] = getNextFloat();
-    		points[j].index = index;
+    			points[j].coord[1] = getNextFloat();
+    			points[j].index = index;
 		}
 	}
 }
@@ -143,10 +143,10 @@ void heapify(Point *points, int n, int i) {
     	max = right;
 
 	if (max != i) {
-    	Point temp = points[i];
-    	points[i] = points[max];
-    	points[max] = temp;
-    	heapify(points, n, max);
+    		Point temp = points[i];
+    		points[i] = points[max];
+    		points[max] = temp;
+    		heapify(points, n, max);
 	}
 }
 
@@ -157,11 +157,11 @@ void buildHeap(Point *points, int n) {
 
 void heapSort(Point *points, int n) {
 	buildHeap(points, n);
-	for (int i = n - 1; i >= 0; i--) {
-    	Point temp = points[i];
-    	points[i] = points[0];
-    	points[0] = temp;
-    	heapify(points, i, 0);
+		for (int i = n - 1; i >= 0; i--) {
+    		Point temp = points[i];
+    		points[i] = points[0];
+    		points[0] = temp;
+    		heapify(points, i, 0);
 	}
 }
 
@@ -292,8 +292,8 @@ void distributedSort(Point **points, int elementsNumber, int rank, vector<int> &
 }
 
 int main(int argc, char** argv) {
-	if (argc < 2) {
-    	cout << "Number of elements is needed" << endl;
+	if (argc < 3) {
+    	cout << "n1 and n2 are needed" << endl;
     	return 0;
 	}
 	int n = stoi(argv[1]);
@@ -313,7 +313,7 @@ int main(int argc, char** argv) {
 	Point *points = new Point[n2];
 	generatePoints(points, n2, rank, n);
     
-    	vector<int> sortingNet = createSortingNet(0, numprocs);
+	vector<int> sortingNet = createSortingNet(0, numprocs);
 	MPI_Barrier(MPI_COMM_WORLD);
 	t1 = MPI_Wtime();
 
